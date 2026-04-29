@@ -11,7 +11,7 @@ const ToDoListItem = ({ title }) => {
             </div>
             <div className="item-actions">
                 <button className="mr-[20px] outline outline-offset-4 outline-blue-500 rounded-[2px] cursor-pointer">
-                    <PencilIcon className="w-5 h-5 text-blue-500" />
+                    <PencilIcon onClick={() => onEdit(index, title)} className="w-5 h-5 text-blue-500" />
                 </button>
                 <button className="outline outline-offset-4 outline-red-500 rounded-[2px] cursor-pointer">
                     <TrashIcon className="w-5 h-5 text-red-500" />
