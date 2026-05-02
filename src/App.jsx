@@ -1,51 +1,66 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ToDoListItem from "./ToDoListItem";
 import { PlusIcon } from "@heroicons/react/16/solid";
 import DeleteModal from "./DeleteModal";
+import { getTodos, createTodo, updateTodo, deleteTodo } from "./api/todosApi";
 
 const App = () => {
   const [showInput, setShowInput] = useState(false);
   const [todoText, setTodoText] = useState("");
   const [todos, setTodos] = useState([]);
-  const [editIndex, setEditIndex] = useState(null);
+  const [editId, setEditId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteIndex, setDeleteIndex] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
 
-  const addTodo = () => {
+  const addTodo = async () => {
     if (todoText.trim() === "") return;
-    if (editIndex === null) {
-      setTodos([...todos, todoText.trim()]);
+    if (editId === null) {
+      const newTodo = await createTodo({
+        'title' : todoText.trim(),
+      });
+      setTodos([...todos, newTodo]);
     } else {
-      const updatedTodos = todos.map((todo, index) => {
-        if (index === editIndex) {
-          return todoText.trim();
+      const updatedTodo = await updateTodo(editId, {
+        title : todoText.trim(),
+      });
+
+      setTodos(todos.map((todo) => {
+        if(todo.id === editId){
+          return updatedTodo;
         }
 
         return todo;
-      });
-
-      setTodos(updatedTodos);
-      setEditIndex(null);
+      }));
+      setEditId(null);
     }
     setTodoText("");
     setShowInput(false);
   };
 
-  const requestDelete = (index) => {
-    setDeleteIndex(index);
+  const requestDelete = (id) => {
+    setDeleteId(id);
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    setTodos(todos.filter((todo, index) => index !== deleteIndex));
-    setDeleteIndex(null);
+  const confirmDelete = async () => {
+    await deleteTodo(deleteId);
+    setTodos(todos.filter((todo) => todo.id !== deleteId));
+    setDeleteId(null);
     setShowDeleteModal(false);
   };
 
   const cancelDelete = () => {
-    setDeleteIndex(null);
+    setDeleteId(null);
     setShowDeleteModal(false);
   };
+
+  useEffect(() => {
+    const loadTodos = async () => {
+      const data = await getTodos();
+      setTodos(data);
+    };
+    loadTodos();
+  },[]);
 
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-10 text-slate-900">
@@ -63,7 +78,7 @@ const App = () => {
             onClick={() => {
               setShowInput(true);
               setTodoText("");
-              setEditIndex(null);
+              setEditId(null);
             }}
             aria-label="Add todo"
           >
@@ -76,7 +91,7 @@ const App = () => {
             <input
               type="text"
               className="min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              placeholder={editIndex === null ? "Add a new task" : "Edit task"}
+              placeholder={editId === null ? "Add a new task" : "Edit task"}
               value={todoText}
               onChange={(e) => setTodoText(e.target.value)}
               onKeyDown={(e) => {
@@ -89,7 +104,7 @@ const App = () => {
               className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
               onClick={addTodo}
             >
-              {editIndex === null ? "Add" : "Save"}
+              {editId === null ? "Add" : "Save"}
             </button>
           </div>
         )}
@@ -101,14 +116,14 @@ const App = () => {
             </div>
           )}
 
-          {todos.map((todo, index) => {
+          {todos.map((todo) => {
             return (
               <ToDoListItem
-                key={index}
-                title={todo}
-                index={index}
+                key={todo.id}
+                title={todo.title}
+                id={todo.id}
                 onEdit={(i, currentText) => {
-                  setEditIndex(i);
+                  setEditId(i);
                   setShowInput(true);
                   setTodoText(currentText);
                 }}
